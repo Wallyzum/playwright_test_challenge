@@ -1,0 +1,42 @@
+services:
+  # Service name intentionally avoids "app" — Chromium's HSTS preload list
+  # covers the .app TLD, which causes ERR_SSL_PROTOCOL_ERROR when Chrome
+  # tries to navigate to http://app:3100 and force-upgrades to HTTPS.
+  webapp:
+    image: automaticbytes/demo-app
+    container_name: demo-app
+    ports:
+      - "3100:3100"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3100', (r) => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: playwright-tests
+    depends_on:
+      webapp:
+        condition: service_healthy
+    environment:
+      # Inside Docker, use the service name instead of localhost
+      - BASE_URL=http://webapp:3100
+      - BROWSER=${BROWSER:-}
+      - HEADLESS=true
+      - IS_MOBILE=${IS_MOBILE:-false}
+      - DEVICE=${DEVICE:-iPhone 13}
+      - PLATFORM=${PLATFORM:-linux}
+    volumes:
+      # Test results are written to the host for post-run inspection
+      - ./test-results:/app/test-results
+    command: >
+      sh -c "
+        until curl -sf http://webapp:3100 > /dev/null 2>&1; do
+          echo 'Waiting for webapp...'; sleep 2;
+        done &&
+        npx playwright test --reporter=list,html
+      "
