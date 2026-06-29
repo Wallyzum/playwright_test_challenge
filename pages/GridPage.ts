@@ -13,8 +13,7 @@ export class GridPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    // Selector to be refined after inspecting the live app
-    this.gridItems = page.locator('.grid-item, .product-card, [data-testid="grid-item"]');
+    this.gridItems = page.locator('#menu div.item');
   }
 
   async goto(): Promise<void> {
@@ -26,10 +25,10 @@ export class GridPage extends BasePage {
   async getItemAt(position: number): Promise<GridItem> {
     const item = this.gridItems.nth(position - 1);
     return {
-      title:     await item.locator('.title, h2, h3, [data-testid="item-title"]').first().innerText(),
-      price:     await item.locator('.price, [data-testid="item-price"]').first().innerText(),
+      title:     await item.locator('h4[data-test-id="item-name"]').innerText(),
+      price:     await item.locator('p#item-price').innerText(),
       hasImage:  await item.locator('img').isVisible(),
-      hasButton: await item.locator('button, a[role="button"]').first().isVisible(),
+      hasButton: await item.locator('button[data-test-id="add-to-order"]').isVisible(),
     };
   }
 
@@ -40,9 +39,5 @@ export class GridPage extends BasePage {
       results.push(await this.getItemAt(i));
     }
     return results;
-  }
-
-  async getCount(): Promise<number> {
-    return this.gridItems.count();
   }
 }
