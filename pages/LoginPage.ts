@@ -10,12 +10,13 @@ export class LoginPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    // Selectors to be confirmed against the live app; refined in test branch
-    this.usernameInput  = page.locator('#username, input[name="username"]').first();
-    this.passwordInput  = page.locator('#password, input[name="password"]').first();
-    this.submitButton   = page.locator('button[type="submit"]');
-    this.errorMessage   = page.locator('.error-message, .alert, [role="alert"]').first();
-    this.welcomeMessage = page.locator('.welcome, h1, [data-testid="welcome"]').first();
+    this.usernameInput  = page.locator('#username');
+    this.passwordInput  = page.locator('#password');
+    this.submitButton   = page.locator('#signin-button');
+    this.errorMessage   = page.locator('#message');
+    // After successful login the browser navigates to /home;
+    // p[data-id="username"] holds the logged-in username there.
+    this.welcomeMessage = page.locator('p[data-id="username"]');
   }
 
   async goto(): Promise<void> {

@@ -4,6 +4,7 @@ import { buildProjects } from './utils/devices';
 
 export default defineConfig({
   testDir: './tests',
+  outputDir: 'test-results/artifacts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
