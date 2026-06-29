@@ -1,104 +1,210 @@
-# **App Automation Test**
+# Playwright TypeScript Test Challenge
 
-## Must have before start
+End-to-end test suite for the `automaticbytes/demo-app` web application, built with **Playwright** and **TypeScript** following the **Page Object Model** pattern.
 
-- Git
-- Docker
+---
 
-### Steps
+## Prerequisites
 
-1. Pull the docker image containing the web app
-`docker pull automaticbytes/demo-app`
+| Tool | Minimum version |
+|------|----------------|
+| Node.js | 18 LTS |
+| npm | 9 |
+| Docker + Docker Compose v2 | any recent |
+| Git | any recent |
 
-2. Run the image
-`docker run -p 3100:3100 automaticbytes/demo-app`
+---
 
-3. Verify the app is shown in below url and set it as the base url for the tests.
-`http://localhost:3100`
+## Quick Start — Local
 
-4. Create in your personal github a public repository (name it for instance home-test).
+### 1. Clone and install dependencies
 
-5. Code requested exercises, commit and push your code and send the repository link according to the instructions given by the recruiter who contacted you.
+```bash
+git clone <repo-url>
+cd playwright_test_challenge
+npm ci
+npx playwright install --with-deps
+```
 
-6. Forking this repository is not needed.
+### 2. Start the application under test
 
-### General requisites for submission
+```bash
+docker run -d -p 3100:3100 --name demo-app automaticbytes/demo-app
+```
 
- 1. **Programming languages**
-    - Java
-    - Javascript
-    - Typescript
+Verify it's up: open `http://localhost:3100` in your browser.
 
- 2. **Drivers**
-    - Playwright
-    - Selenium
+### 3. Configure environment
 
- 3. **Browsers**
-    - Cross-Browser Testing: Tests should be compatible with multiple browsers and ensure they behave consistently.
-  
- 4. **Multi-Platform Testing (_Desirable_):**
-	Tests should support execution on multiple platforms, including:
-   	- Desktop (Windows, macOS, Linux)
-   	- Mobile devices (Android, iOS)
-  
- 5. **Environment Configuration (_Desirable_):**
-   	- The solution must include a Dockerized environment to ensure tests can be executed in an isolated and reproducible environment.
-   	- Instructions for setting up and running tests in Docker must be provided.
+```bash
+cp .env.example .env
+# Edit .env to adjust BASE_URL, BROWSER, etc.
+```
 
-### General test requisites
-- All tests should provide a setup and tear down mechanism that opens and closes the browser.
-- All tests should run successfully either from IDE or command line.
-- Instructions to build and run the code and tests submitted must be provided.
-- Submitted code implementing a Page Object Model will be taken in high consideration.
+### 4. Run tests
 
-### Tests Scenarios
-1.  Login Success
-    - Navigate to http://localhost:3100/login
-    - Successfully login with credentials: johndoe19/supersecret
-    - Assert that welcome message containing username is shown.
+```bash
+# Run all tests (browser from .env, default: chromium)
+npm test
 
-2. Login Failure A
-    - Navigate to http://localhost:3100/login
-    - Enter wrong username/password
-    - Assert error message is shown.
+# Run only smoke tests
+npm run test:smoke
 
-3. Login Failure B
-    - Navigate to http://localhost:3100/login
-    - Leave both username/password in blank
-    - Assert error message is shown.
+# Force a specific browser
+npm run test:chromium
+npm run test:firefox
+npm run test:webkit
 
-4. Checkout Form Order Success
-    - Navigate to http://localhost:3100/checkout
-    - Complete all the fields
-    - Verify that if "Shipping address same as billing" checkbox is not checkmarked then checkmark it.
-    - Submit the form and assert that the order confirmation number is not empty.
+# Run in mobile emulation mode (device from .env, default: iPhone 13)
+npm run test:mobile
 
-5. Checkout Form Alert
-    - Navigate to http://localhost:3100/checkout
-    - Complete all the fields
-    - Verify that if "Shipping address same as billing" checkbox is checkmarked, then uncheckmark it.
-    - Try to submit the form and validate that the alert message is shown and confirm the alert.
-    - Assert alert is gone.
+# Override env inline
+BROWSER=firefox HEADLESS=false npm test
 
-6. Cart Total Test
-    - Navigate to http://localhost:3100/checkout
-    - Assert that the cart total shown is correct for the item prices added.
+# Open HTML report after a run
+npm run report
+```
 
-7. Grid Item Test
-    - Navigate to http://localhost:3100/grid
-    - Assert that in position 7 the product shown is "Super Pepperoni"
-    - Assert that the price shown is $10
-	
-8. Grid All Items Test	
-    - Navigate to http://localhost:3100/grid
-    - Assert that all the items have a non empty title, price, image and a button.
+---
 
-9. Search Success
-    - Navigate to http://localhost:3100/search
-    - Search for any word (for instance automation)
-    - Assert that "Found one result for" plus the word you searched is shown.
+## Quick Start — Docker (full stack)
 
-10. Search Empty
-    - Navigate to http://localhost:3100/search
-    - Leave search box empty and submit the search
-    - Assert that "Please provide a search word." message is shown.
+Spins up both the demo app and the test runner. Tests start automatically once the app passes its health check.
+
+```bash
+cp .env.example .env   # optional: customize BROWSER, DEVICE, etc.
+
+docker compose up --build
+```
+
+Results land in `./test-results/` on the host.
+
+```bash
+# View HTML report locally after the Docker run
+npm run report
+```
+
+To run only a specific suite in Docker:
+
+```bash
+BROWSER=firefox docker compose up --build
+IS_MOBILE=true DEVICE="Pixel 7" docker compose up --build
+```
+
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BASE_URL` | `http://localhost:3100` | URL of the application under test |
+| `BROWSER` | *(empty = all)* | `chromium`, `firefox`, or `webkit` |
+| `HEADLESS` | `true` | Run browsers headlessly (`true`/`false`) |
+| `IS_MOBILE` | `false` | Enable mobile device emulation |
+| `DEVICE` | `iPhone 13` | Playwright device name (when `IS_MOBILE=true`) |
+| `PLATFORM` | `linux` | Informational OS label used in project names |
+
+To see all supported device names for `DEVICE`, run this one-liner:
+```bash
+node -e "const { devices } = require('@playwright/test'); console.log(Object.keys(devices).join('\n'))"
+```
+
+> **Note:** Headed mode (`HEADLESS=false`) requires a display server. It works on macOS/Windows desktops but not inside Docker without additional Xvfb configuration.
+
+---
+
+## Project Structure
+
+```
+playwright_test_challenge/
+├── .env.example              # Environment template (committed)
+├── .env                      # Local overrides (gitignored)
+├── .gitignore
+├── docker-compose.yml        # Full-stack Docker setup
+├── Dockerfile                # Test runner image
+├── package.json
+├── playwright.config.ts      # Dynamic project builder (reads .env)
+├── tsconfig.json
+├── README.MD
+│
+├── utils/
+│   ├── env.ts                # Typed env loader
+│   └── devices.ts            # Playwright project builder
+│
+├── pages/                    # Page Object Model layer
+│   ├── BasePage.ts           # Abstract base class
+│   ├── LoginPage.ts
+│   ├── CheckoutPage.ts
+│   ├── GridPage.ts
+│   └── SearchPage.ts
+│
+├── fixtures/
+│   └── test.fixtures.ts      # Extended test object with POM fixtures
+│
+└── tests/
+    ├── smoke/
+    │   └── smoke.spec.ts     # App availability smoke suite
+    ├── login/                # Login test suite (added in next branch)
+    ├── checkout/             # Checkout test suite
+    ├── grid/                 # Grid test suite
+    └── search/               # Search test suite
+```
+
+---
+
+## Page Object Model
+
+Each test file imports `{ test, expect }` from `fixtures/test.fixtures.ts` instead of directly from `@playwright/test`. This gives every test access to pre-built page objects without any manual setup:
+
+```
+test file
+  └─ imports from fixtures/test.fixtures.ts
+        └─ LoginPage / CheckoutPage / GridPage / SearchPage
+              └─ extends BasePage
+                    └─ wraps Playwright Page
+```
+
+**Setup and teardown** is handled by Playwright's fixture lifecycle — the browser opens before each test and closes after, automatically.
+
+---
+
+## Adding New Tests
+
+1. Create a file under the appropriate `tests/<suite>/` directory.
+2. Import from the fixtures file:
+   ```typescript
+   import { test, expect } from '../../fixtures/test.fixtures';
+   ```
+3. Use the pre-wired page objects:
+   ```typescript
+   test('example', async ({ loginPage }) => {
+     await loginPage.goto();
+     await loginPage.login('johndoe19', 'supersecret');
+     expect(await loginPage.getWelcomeText()).toContain('johndoe19');
+   });
+   ```
+4. If you need a new page, add a class in `pages/` extending `BasePage`, then register it as a fixture in `fixtures/test.fixtures.ts`.
+
+---
+
+## Cross-Browser & Multi-Platform Matrix
+
+| Scenario | Command |
+|----------|---------|
+| All desktop browsers | `BROWSER= npm test` (empty = all three) |
+| Chromium only | `npm run test:chromium` |
+| Firefox only | `npm run test:firefox` |
+| WebKit (Safari engine) only | `npm run test:webkit` |
+| iPhone 13 emulation | `IS_MOBILE=true npm test` |
+| Pixel 7 emulation | `IS_MOBILE=true DEVICE="Pixel 7" npm test` |
+| Full matrix in Docker (linux) | `docker compose up --build` |
+
+The `PLATFORM` variable adds a label (e.g., `chromium--desktop--macos`) to the Playwright project name, making it easy to distinguish results in CI reports when running the same suite on multiple OS runners.
+
+---
+
+## CI Notes
+
+- Set `CI=true` in your CI environment — the config automatically enables 2 retries and 4 parallel workers.
+- Artefacts (screenshots, videos, traces) for failed tests are written to `test-results/`.
+- The HTML report is at `test-results/html-report/index.html`.

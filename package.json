@@ -1,0 +1,27 @@
+{
+  "name": "playwright-test-challenge",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test":             "playwright test",
+    "test:smoke":       "playwright test tests/smoke/",
+    "test:login":       "playwright test tests/login/",
+    "test:checkout":    "playwright test tests/checkout/",
+    "test:grid":        "playwright test tests/grid/",
+    "test:search":      "playwright test tests/search/",
+    "test:headed":      "cross-env HEADLESS=false playwright test",
+    "test:chromium":    "cross-env BROWSER=chromium playwright test",
+    "test:firefox":     "cross-env BROWSER=firefox playwright test",
+    "test:webkit":      "cross-env BROWSER=webkit playwright test",
+    "test:mobile":      "cross-env IS_MOBILE=true playwright test",
+    "report":           "playwright show-report test-results/html-report",
+    "install:browsers": "playwright install --with-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.0.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.5.0"
+  }
+}
