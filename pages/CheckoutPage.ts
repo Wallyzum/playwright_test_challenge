@@ -4,41 +4,57 @@ import { BasePage } from './BasePage';
 export class CheckoutPage extends BasePage {
   // Billing fields
   readonly firstNameInput: Locator;
-  readonly lastNameInput:  Locator;
   readonly emailInput:     Locator;
   readonly addressInput:   Locator;
   readonly cityInput:      Locator;
   readonly stateInput:     Locator;
   readonly zipInput:       Locator;
 
-  // Shipping
-  readonly sameAsBillingCheckbox: Locator;
+  // Payment fields
+  readonly cardNameInput:   Locator;
+  readonly cardNumberInput: Locator;
+  readonly expMonthSelect:  Locator;
+  readonly expYearInput:    Locator;
+  readonly cvvInput:        Locator;
 
-  // Submission & feedback
-  readonly submitButton:       Locator;
+  // Shipping checkbox & submit
+  readonly sameAsBillingCheckbox: Locator;
+  readonly submitButton:          Locator;
+
+  // Order confirmation (on /order page after successful submit)
   readonly confirmationNumber: Locator;
 
   // Cart summary
-  readonly cartTotal: Locator;
   readonly cartItems: Locator;
+  readonly cartTotal: Locator;
 
   constructor(page: Page) {
     super(page);
-    // Selectors to be refined after inspecting the live app
-    this.firstNameInput = page.locator('input[name="firstName"], #firstName').first();
-    this.lastNameInput  = page.locator('input[name="lastName"], #lastName').first();
-    this.emailInput     = page.locator('input[type="email"], input[name="email"]').first();
-    this.addressInput   = page.locator('input[name="address"], #address').first();
-    this.cityInput      = page.locator('input[name="city"], #city').first();
-    this.stateInput     = page.locator('input[name="state"], select[name="state"], #state').first();
-    this.zipInput       = page.locator('input[name="zip"], #zip').first();
+    // Billing
+    this.firstNameInput = page.locator('#fname');
+    this.emailInput     = page.locator('#email');
+    this.addressInput   = page.locator('#adr');
+    this.cityInput      = page.locator('#city');
+    this.stateInput     = page.locator('#state');
+    this.zipInput       = page.locator('#zip');
 
-    this.sameAsBillingCheckbox = page.locator('input[type="checkbox"]').first();
-    this.submitButton          = page.locator('button[type="submit"]');
-    this.confirmationNumber    = page.locator('.confirmation-number, .order-id, [data-testid="confirmation"]').first();
+    // Payment
+    this.cardNameInput   = page.locator('#cname');
+    this.cardNumberInput = page.locator('#ccnum');
+    this.expMonthSelect  = page.locator('#expmonth');
+    this.expYearInput    = page.locator('#expyear');
+    this.cvvInput        = page.locator('#cvv');
 
-    this.cartTotal = page.locator('.cart-total, .total, [data-testid="cart-total"]').first();
-    this.cartItems = page.locator('.cart-item, .line-item, [data-testid="cart-item"]');
+    // Checkbox & button
+    this.sameAsBillingCheckbox = page.locator('input[name="sameadr"]');
+    this.submitButton          = page.locator('button.btn');
+
+    // p[data-id="ordernumber"] lives on /order after a successful submit
+    this.confirmationNumber = page.locator('p[data-id="ordernumber"]');
+
+    // Cart: item rows have an <a>, Total row does not
+    this.cartItems = page.locator('.col-25 p:has(a) span.price');
+    this.cartTotal = page.locator('.col-25 p:not(:has(a)) span.price');
   }
 
   async goto(): Promise<void> {
@@ -46,22 +62,30 @@ export class CheckoutPage extends BasePage {
     await this.waitForReady();
   }
 
-  async fillBillingForm(data: {
-    firstName: string;
-    lastName:  string;
-    email:     string;
-    address:   string;
-    city:      string;
-    state:     string;
-    zip:       string;
+  async fillForm(data: {
+    firstName:  string;
+    email:      string;
+    address:    string;
+    city:       string;
+    state:      string;
+    zip:        string;
+    cardName:   string;
+    cardNumber: string;
+    expMonth:   string;
+    expYear:    string;
+    cvv:        string;
   }): Promise<void> {
     await this.firstNameInput.fill(data.firstName);
-    await this.lastNameInput.fill(data.lastName);
     await this.emailInput.fill(data.email);
     await this.addressInput.fill(data.address);
     await this.cityInput.fill(data.city);
     await this.stateInput.fill(data.state);
     await this.zipInput.fill(data.zip);
+    await this.cardNameInput.fill(data.cardName);
+    await this.cardNumberInput.fill(data.cardNumber);
+    await this.expMonthSelect.selectOption(data.expMonth);
+    await this.expYearInput.fill(data.expYear);
+    await this.cvvInput.fill(data.cvv);
   }
 
   async ensureSameAsBillingIs(checked: boolean): Promise<void> {
@@ -75,23 +99,18 @@ export class CheckoutPage extends BasePage {
     await this.submitButton.click();
   }
 
-  async getConfirmationNumber(): Promise<string> {
-    return this.confirmationNumber.innerText();
-  }
-
-  async getCartTotalText(): Promise<string> {
-    return this.cartTotal.innerText();
-  }
-
   async getCartItemPrices(): Promise<number[]> {
-    // Selectors refined in checkout test branch after inspecting the live app
-    const priceLocators = this.page.locator('.item-price, [data-testid="item-price"]');
-    const count = await priceLocators.count();
+    const count = await this.cartItems.count();
     const prices: number[] = [];
     for (let i = 0; i < count; i++) {
-      const text = await priceLocators.nth(i).innerText();
-      prices.push(parseFloat(text.replace(/[^0-9.]/g, '')));
+      const text = await this.cartItems.nth(i).innerText();
+      prices.push(parseFloat(text.replace('$', '')));
     }
     return prices;
+  }
+
+  async getCartTotalAmount(): Promise<number> {
+    const text = await this.cartTotal.innerText();
+    return parseFloat(text.replace('$', ''));
   }
 }
